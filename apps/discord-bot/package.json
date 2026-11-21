@@ -1,0 +1,20 @@
+{
+  "name": "@avenzia/bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --import ../../scripts/env.mjs src/index.ts",
+    "start": "node --import ../../scripts/env.mjs --import tsx src/index.ts",
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@avenzia/shared": "*",
+    "discord.js": "^14.16.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}

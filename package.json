@@ -1,0 +1,27 @@
+{
+  "name": "avenzia",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev:api": "npm -w @avenzia/api run dev",
+    "dev:bot": "npm -w @avenzia/bot run dev",
+    "dev:desktop": "npm -w @avenzia/desktop run tauri -- dev",
+    "db:generate": "npm -w @avenzia/database run generate",
+    "db:migrate": "npm -w @avenzia/database run migrate",
+    "db:deploy": "npm -w @avenzia/database run deploy",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "node --test scripts/env.test.mjs && npm run test --workspaces --if-present",
+    "build": "node scripts/build.mjs",
+    "release": "node scripts/build.mjs",
+    "dev:web": "npm -w @avenzia/desktop run dev",
+    "doctor": "node scripts/doctor.mjs",
+    "desktop:prepare": "node scripts/prepare-desktop.mjs"
+  }
+}

@@ -1,0 +1,51 @@
+name: Release (manuel)
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: avenzia-release
+  cancel-in-progress: false
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/test
+      VITE_API_URL: ${{ vars.VITE_API_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - run: npm ci --ignore-scripts
+      - run: npm run db:generate
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm audit --audit-level=high
+      - run: npx tauri icon app-icon.png --output src-tauri/icons
+        working-directory: apps/desktop
+      - run: npm run desktop:prepare -- --public
+      - name: Vérifier les secrets de signature
+        shell: pwsh
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          if (!$env:TAURI_SIGNING_PRIVATE_KEY) { throw "Secret TAURI_SIGNING_PRIVATE_KEY manquant" }
+          if (!$env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD) { throw "Secret TAURI_SIGNING_PRIVATE_KEY_PASSWORD manquant" }
+      - uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: apps/desktop
+          args: --bundles nsis --config ../../.tools/tauri-build.json -- --locked
+          tagName: v__VERSION__
+          releaseName: Avenzia v__VERSION__
+          releaseDraft: true
+          uploadUpdaterJson: true
+          updaterJsonPreferNsis: true

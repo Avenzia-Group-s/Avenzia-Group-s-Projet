@@ -1,0 +1,16 @@
+node_modules/
+dist/
+target/
+.tools/
+.keys/
+.env
+.env.local
+*.log
+apps/desktop/src-tauri/gen/
+apps/desktop/src-tauri/icons/
+.env.*
+!.env.example
+apps/desktop/icons/
+logs*.csv
+avenzia v0.csv
+*.tsbuildinfo

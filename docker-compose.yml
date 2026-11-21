@@ -1,0 +1,12 @@
+# Alternative à PostgreSQL portable : docker compose up -d
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: avenzia
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?définir POSTGRES_PASSWORD}
+      POSTGRES_DB: avenzia
+    ports: ["127.0.0.1:5433:5432"]
+    volumes: [avenzia-data:/var/lib/postgresql/data]
+volumes:
+  avenzia-data:

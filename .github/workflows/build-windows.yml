@@ -1,0 +1,43 @@
+name: Build Windows
+on:
+  push:
+    branches: ["codex/**"]
+  workflow_dispatch:
+    inputs:
+      api_url:
+        description: Adresse API (localhost pour un test sur votre PC)
+        required: true
+        default: http://localhost:3000
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/test
+      VITE_API_URL: ${{ inputs.api_url || 'http://localhost:3000' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - run: npm ci --ignore-scripts
+      - run: npm run db:generate
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm audit --audit-level=high
+      - run: npx tauri icon app-icon.png --output src-tauri/icons
+        working-directory: apps/desktop
+      - run: npm run desktop:prepare -- --unsigned
+      - name: Compiler l'installateur de test
+        working-directory: apps/desktop
+        run: npx tauri build --bundles nsis --config ../../.tools/tauri-build.json -- --locked
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Avenzia-Windows-test
+          path: apps/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe
+          if-no-files-found: error
+          retention-days: 14

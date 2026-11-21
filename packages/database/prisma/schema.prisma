@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum GlobalRole {
+  FOUNDER
+  CO_FOUNDER
+  STAFF
+  MEMBER
+}
+enum ProjectRole {
+  MANAGER
+  CONTRIBUTOR
+  READER
+}
+enum ProjectStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  DONE
+  ARCHIVED
+}
+
+model User {
+  id             String   @id @default(uuid())
+  discordId      String   @unique
+  username       String
+  avatar         String?
+  globalRole     GlobalRole @default(MEMBER)
+  discordRoleIds String[] @default([])
+  rolesCheckedAt DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  sessions       Session[]
+  memberships    ProjectMembership[]
+  auditLogs      AuditLog[]
+}
+
+model Session {
+  id        String    @id @default(uuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  @@index([userId])
+}
+
+// Flux OAuth2 + PKCE : aucun jeton de session n'est stocké ici.
+model AuthFlow {
+  state         String    @id
+  codeChallenge String
+  userId        String?
+  error         String?
+  expiresAt     DateTime
+  consumedAt    DateTime?
+  // 2FA par message privé Discord (le code n'est jamais stocké en clair)
+  pendingUserId String?
+  codeHash      String?
+  codeExpiresAt DateTime?
+  attempts      Int       @default(0)
+  sends         Int       @default(0)
+  lastSentAt    DateTime?
+  createdAt     DateTime  @default(now())
+  @@index([expiresAt])
+}
+
+model Project {
+  id          String        @id @default(uuid())
+  name        String
+  description String        @default("")
+  icon        String        @default("folder")
+  color       String        @default("#5865F2")
+  status      ProjectStatus @default(ACTIVE)
+  createdById String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  mappings    DiscordRoleMapping[]
+  memberships ProjectMembership[]
+}
+
+model DiscordRoleMapping {
+  id            String  @id @default(uuid())
+  projectId     String
+  project       Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  discordRoleId String
+  @@unique([discordRoleId])
+  @@index([projectId])
+}
+
+model ProjectMembership {
+  id          String      @id @default(uuid())
+  projectId   String
+  userId      String
+  projectRole ProjectRole @default(READER)
+  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([projectId, userId])
+  @@index([userId])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action    String
+  target    String?
+  meta      Json?
+  createdAt DateTime @default(now())
+  @@index([createdAt])
+  @@index([action])
+}
