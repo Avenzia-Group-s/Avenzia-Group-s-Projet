@@ -48,6 +48,8 @@ Les secrets et leurs sauvegardes sont exclus de Git. Le dossier `.keys` doit êt
 
 ## Mises à jour et hébergement
 
+Pour intégrer la future API publique, renseignez `publication.json`, puis lancez `PUBLIER-GITHUB.bat`. Les réglages côté hébergement et Discord sont détaillés au début de [UPDATES.md](docs/UPDATES.md).
+
 Consultez [UPDATES.md](docs/UPDATES.md) pour les mises à jour en place et [PTERODACTYL.md](docs/PTERODACTYL.md) pour l’egg Node.js 22. L’alternative Render Free et Neon Free est décrite dans [DEPLOY.md](docs/DEPLOY.md).
 
 Après configuration, `scripts\\release.bat patch` prépare la version et déclenche la compilation signée sur GitHub. La release est publiée après vérification des artefacts.

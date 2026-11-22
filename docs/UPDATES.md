@@ -1,5 +1,37 @@
 # Mises à jour d’Avenzia
 
+## Adresse publique et publication en un clic
+
+1. À la racine du projet, ouvrez `publication.json`. Remplacez uniquement la valeur de `apiUrl` par l’adresse HTTPS fournie par l’hébergeur, sans chemin.
+
+   ```json
+   { "apiUrl": "https://api.votre-domaine.fr" }
+   ```
+
+2. Dans Pterodactyl, ouvrez le serveur **Avenzia | API → Fichiers → avenzia → .env.local**. Modifiez la ligne existante `API_PUBLIC_URL` avec cette même adresse, puis redémarrez l’API. Renseignez le nombre de proxys de confiance suivant les indications de l’hébergeur dans `API_TRUST_PROXY_HOPS`.
+3. Dans Discord Developer Portal, application Avenzia → **OAuth2 → Redirects → Add Redirect**, ajoutez `https://api.votre-domaine.fr/auth/discord/callback` et enregistrez.
+4. Double-cliquez sur **PUBLIER-GITHUB.bat**, à la racine du projet.
+
+Le lanceur vérifie `/health` et le callback réellement généré par l’API. Ce contrôle ouvre un flux OAuth de test qui expire automatiquement après dix minutes. Il ne vérifie pas la liste des Redirects enregistrée dans le portail Discord. Le script refuse une adresse de démonstration ou une API qui génère encore un callback local.
+
+Il vérifie la présence des secrets de signature déjà configurés sur GitHub, puis met à jour `VITE_API_URL` et `RELEASE_TARGET=public` dans les variables du dépôt. Il enregistre automatiquement la modification de `publication.json`, augmente la version et envoie le commit et le tag pour déclencher **Release signée**.
+
+Les autres modifications du code doivent être enregistrées dans un commit avant le lancement. Le script utilise la connexion GitHub de Git sur ce PC. Aucun token ne se renseigne dans `publication.json`.
+
+Le résultat paraît dans **GitHub → Actions → Release signée**, puis dans **Releases** après validation. Les utilisateurs reçoivent ensuite cette version via les mises à jour intégrées.
+
+Pour contrôler uniquement le fichier, sans réseau ni publication
+
+```bat
+PUBLIER-GITHUB.bat --check
+```
+
+Pour vérifier l’API et le callback sans modifier GitHub ni créer de version
+
+```bat
+PUBLIER-GITHUB.bat --verify
+```
+
 ## Parcours utilisateur
 
 Avenzia recherche une mise à jour au lancement, avant la connexion Discord, puis périodiquement et lors du retour dans la fenêtre.
