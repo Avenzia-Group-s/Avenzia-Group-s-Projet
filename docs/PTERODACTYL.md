@@ -1,6 +1,26 @@
 # Hébergement Pterodactyl
 
-## Egg conseillé
+## API, bot et PostgreSQL séparés
+
+Trois eggs sont fournis pour installer chaque service dans son propre serveur Node.js ou PostgreSQL.
+
+| Service | Egg | Mémoire de départ |
+| --- | --- | --- |
+| API | `deploy/pterodactyl/egg-avenzia-api.json` | 512 Mo |
+| Bot Discord | `deploy/pterodactyl/egg-avenzia-bot.json` | 512 Mo |
+| PostgreSQL 16 | `deploy/pterodactyl/egg-avenzia-postgres.json` | 512 Mo |
+
+Ces exports correspondent au déploiement testé sur Pterodactyl 2. Les eggs API et bot attendent le monorepo dans `/home/container/avenzia`, avec une configuration privée `.env.local` dans ce dossier. Ils conservent les dépendances tant que le lockfile reste identique. Lors d’un changement de version majeure de Node.js, supprimez uniquement le marqueur `avenzia/node_modules/.avenzia-lock` pour forcer leur réinstallation.
+
+L’API charge `DATABASE_URL`, les paramètres Discord et `INTERNAL_API_SECRET`. Le bot reçoit ses identifiants Discord, le même secret interne et `API_URL` pointant vers l’API sur le réseau Docker. Il n’a pas besoin de connexion PostgreSQL ni du secret OAuth Discord. Utilisez des secrets différents pour le superutilisateur PostgreSQL et le rôle applicatif, sans valeur par défaut.
+
+L’egg PostgreSQL initialise une base `avenzia` et un rôle applicatif sans droits superutilisateur. Il utilise SCRAM et un volume persistant. Il conserve une base déjà initialisée. Prévoyez des sauvegardes PostgreSQL cohérentes et testez leur restauration avant d’y conserver des données importantes.
+
+Sur un même nœud Wings, les conteneurs peuvent communiquer par leurs noms UUID et les ports internes des services. Cette résolution a été vérifiée sur le déploiement. Limitez les allocations sur l’hôte à `127.0.0.1`. Le reverse proxy HTTPS doit être situé sur cet hôte ou disposer d’une liaison privée adaptée. PostgreSQL reste privé.
+
+Les 512 Mo par serveur ont permis le démarrage et les contrôles internes. La consommation avec plusieurs utilisateurs doit être mesurée. Les données d’une ancienne base locale ne sont pas transférées par les migrations de schéma.
+
+## Egg combiné
 
 L’egg fourni dans `deploy/pterodactyl/egg-avenzia.json` lance l’API et le bot dans un même serveur Node.js 22.
 

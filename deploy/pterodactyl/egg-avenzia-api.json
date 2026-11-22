@@ -1,0 +1,32 @@
+{
+  "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PTERODACTYL PANEL - PTERODACTYL.IO",
+  "meta": {
+    "version": "PTDL_v2",
+    "update_url": null
+  },
+  "exported_at": "2026-11-22T19:15:28+01:00",
+  "name": "Avenzia API Node.js 22",
+  "author": "211538435+BestGameClips@users.noreply.github.com",
+  "description": "Service Avenzia séparé. Code dans /home/container/avenzia et configuration privée dans .env.local.",
+  "features": [],
+  "tags": [],
+  "docker_images": {
+    "Node.js 22": "ghcr.io/ptero-eggs/yolks:nodejs_22"
+  },
+  "file_denylist": [],
+  "startup": "cd /home/container/avenzia || exit 1; export NODE_OPTIONS=\"--max-old-space-size=256\"; export npm_config_progress=false; export API_HOST=0.0.0.0; export API_PORT=\"${SERVER_PORT}\"; if [ ! -f node_modules/.avenzia-lock ] || ! sha256sum -c node_modules/.avenzia-lock --status; then npm ci --include=dev --ignore-scripts && npm run db:generate && sha256sum package-lock.json > node_modules/.avenzia-lock || exit 1; fi; npm run db:deploy && exec npm -w @avenzia/api run start",
+  "config": {
+    "files": "{}",
+    "startup": "{\"done\":[\"Server listening at\"],\"strip_ansi\":true}",
+    "logs": "{}",
+    "stop": "^C"
+  },
+  "scripts": {
+    "installation": {
+      "script": "#!/bin/bash\nset -eu\nmkdir -p /mnt/server\n",
+      "container": "debian:bookworm-slim",
+      "entrypoint": "bash"
+    }
+  },
+  "variables": []
+}
