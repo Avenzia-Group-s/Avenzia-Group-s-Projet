@@ -12,6 +12,7 @@ const MESSAGES: Record<LoginFailure, string> = {
   unavailable: "Discord est momentanément indisponible. Réessayez dans quelques minutes.",
   timeout: "La connexion a expiré. Réessayez.",
   network: "Impossible de joindre le serveur Avenzia. Vérifiez votre connexion.",
+  browser: "Impossible d’ouvrir le navigateur pour la connexion Discord. Relancez Avenzia et vérifiez votre navigateur par défaut.",
   cancelled: "",
 };
 

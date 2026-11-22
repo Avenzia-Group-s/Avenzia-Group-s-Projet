@@ -6,7 +6,7 @@ import { saveToken, loadToken, clearToken } from "./secureStore";
 import { useApp } from "./store";
 import type { PublicProject, PublicUser } from "@avenzia/shared";
 
-export type LoginFailure = "denied" | "dm_closed" | "too_many_attempts" | "not_member" | "failed" | "unavailable" | "timeout" | "network" | "cancelled";
+export type LoginFailure = "denied" | "dm_closed" | "too_many_attempts" | "not_member" | "failed" | "unavailable" | "timeout" | "network" | "browser" | "cancelled";
 export class LoginError extends Error { constructor(public reason: LoginFailure, public inviteUrl?: string | null) { super(reason); } }
 
 const sleep = (ms: number, s: AbortSignal) => new Promise<void>((res, rej) => {
@@ -24,7 +24,12 @@ export async function loginWithDiscord(signal: AbortSignal, hooks: LoginHooks) {
   flowCtx = { state: start.state, verifier };
 
   try {
-    if (inTauri) await openUrl(start.url); else window.open(start.url, "_blank");
+    try {
+      if (inTauri) await openUrl(start.url);
+      else window.open(start.url, "_blank");
+    } catch {
+      throw new LoginError("browser");
+    }
 
     let notified = false;
     const deadline = Date.now() + 10 * 60_000;

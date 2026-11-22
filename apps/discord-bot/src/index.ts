@@ -1,5 +1,5 @@
 import {
-  Client, GatewayIntentBits, MessageFlags, PermissionFlagsBits, REST, Routes,
+  Client, Events, GatewayIntentBits, MessageFlags, PermissionFlagsBits, REST, Routes,
   SlashCommandBuilder, type ChatInputCommandInteraction,
 } from "discord.js";
 import { api } from "./api.js";
@@ -20,11 +20,15 @@ const command = new SlashCommandBuilder().setName("avenzia").setDescription("Com
   .addSubcommand((s) => s.setName("statut").setDescription("État du service Avenzia"))
   .addSubcommand((s) => s.setName("sync").setDescription("Resynchronise les accès (admin)"));
 
-client.once("ready", async () => {
+client.once(Events.ClientReady, async () => {
   try {
     await new REST().setToken(token).put(Routes.applicationGuildCommands(clientId, guildId), { body: [command.toJSON()] });
-  } catch {
-    console.error("Enregistrement des commandes impossible. Vérifiez le serveur Discord et l’installation du bot avec applications.commands.");
+  } catch (error) {
+    const code = typeof error === "object" && error !== null && "code" in error ? error.code : undefined;
+    console.error(code === 10004
+      ? "Discord ne trouve pas le serveur pour ce bot (10004). Vérifiez DISCORD_GUILD_ID et installez le bot sur ce serveur."
+      : "Enregistrement des commandes impossible. Vérifiez le serveur Discord et l’installation du bot avec applications.commands.");
+    if (typeof code === "number") console.error("Code Discord : " + code);
     client.destroy();
     process.exitCode = 1;
     return;
