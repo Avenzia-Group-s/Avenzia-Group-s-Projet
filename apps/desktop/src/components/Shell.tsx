@@ -8,7 +8,6 @@ import { useApp } from "../lib/store";
 import { Logo } from "./Logo";
 import { Dashboard } from "./Dashboard";
 import { SettingsPage } from "./SettingsPage";
-import { UpdateBanner } from "./UpdateBanner";
 
 interface Mod { id: string; label: string; icon: LucideIcon; admin?: boolean }
 interface Section { title: string; mods: Mod[]; admin?: boolean }
@@ -71,7 +70,6 @@ export function Shell() {
       </aside>
 
       <main className="flex min-w-0 flex-1 flex-col bg-bg">
-        <UpdateBanner />
         <div className="min-h-0 flex-1 overflow-y-auto p-6">
           {currentSpace === "settings" ? <SettingsPage /> : currentModule === "dashboard" ? <Dashboard /> : (
             <div className="grid h-full place-items-center text-center">

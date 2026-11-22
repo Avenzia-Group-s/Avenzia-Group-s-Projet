@@ -1,0 +1,202 @@
+{
+  "_comment": "Configuration Avenzia API et bot pour Pterodactyl Panel v1.",
+  "meta": {
+    "version": "PTDL_v2",
+    "update_url": null
+  },
+  "exported_at": "2026-11-22T00:00:00+00:00",
+  "name": "Avenzia API + Discord Bot",
+  "author": "211538435+BestGameClips@users.noreply.github.com",
+  "description": "API Fastify et bot Discord Avenzia dans le meme conteneur Node.js 22. PostgreSQL externe et URL HTTPS publique requis.",
+  "features": null,
+  "docker_images": {
+    "Node.js 22": "ghcr.io/ptero-eggs/yolks:nodejs_22"
+  },
+  "file_denylist": [],
+  "startup": "if [ \"${AUTO_UPDATE:-0}\" = \"1\" ] && [ -d .git ]; then git pull --ff-only || exit 1; fi; npm ci --include=dev --ignore-scripts && npm run db:generate && exec node scripts/start-hosted.mjs",
+  "config": {
+    "files": "{}",
+    "startup": "{\"done\":\"Server listening at\"}",
+    "logs": "{}",
+    "stop": "^C"
+  },
+  "scripts": {
+    "installation": {
+      "script": "#!/bin/bash\nset -euo pipefail\napt-get update\napt-get install -y --no-install-recommends git ca-certificates openssl\nmkdir -p /mnt/server\ncd /mnt/server\nif [ -d .git ]; then\n  git pull --ff-only\nelif [ -z \"$(ls -A .)\" ]; then\n  git clone --single-branch --branch \"${BRANCH}\" \"${GIT_REPOSITORY}\" .\nelse\n  echo \"Le dossier contient deja des fichiers. Verifiez le code present avant installation.\"\n  test -f package.json\nfi\nnpm ci --include=dev --ignore-scripts\nDATABASE_URL=\"${DATABASE_URL:-postgresql://test:test@localhost:5432/test}\" npm run db:generate\n",
+      "container": "node:22-bookworm-slim",
+      "entrypoint": "bash"
+    }
+  },
+  "variables": [
+    {
+      "name": "Depot GitHub",
+      "description": "Depot public contenant le monorepo Avenzia.",
+      "env_variable": "GIT_REPOSITORY",
+      "default_value": "https://github.com/Avenzia-Group-s/Avenzia-Group-s-Projet.git",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string",
+      "field_type": "text"
+    },
+    {
+      "name": "Branche Git",
+      "description": "Branche contenant le code deployee.",
+      "env_variable": "BRANCH",
+      "default_value": "codex/project-setup",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string",
+      "field_type": "text"
+    },
+    {
+      "name": "Actualiser le code au demarrage",
+      "description": "1 pour git pull --ff-only au demarrage, 0 pour conserver la version installee.",
+      "env_variable": "AUTO_UPDATE",
+      "default_value": "0",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|boolean",
+      "field_type": "text"
+    },
+    {
+      "name": "URL HTTPS de l’API",
+      "description": "Adresse publique fournie par l’hebergeur, sans slash final.",
+      "env_variable": "API_PUBLIC_URL",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|url",
+      "field_type": "text"
+    },
+    {
+      "name": "PostgreSQL",
+      "description": "Connexion PostgreSQL externe, par exemple Neon Free. Conserver cette valeur privee.",
+      "env_variable": "DATABASE_URL",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string",
+      "field_type": "text"
+    },
+    {
+      "name": "Discord Client ID",
+      "description": "Application du bot Discord.",
+      "env_variable": "DISCORD_CLIENT_ID",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string",
+      "field_type": "text"
+    },
+    {
+      "name": "Discord Client Secret",
+      "description": "Secret OAuth2 de l’application Discord.",
+      "env_variable": "DISCORD_CLIENT_SECRET",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string",
+      "field_type": "text"
+    },
+    {
+      "name": "Discord Bot Token",
+      "description": "Token du bot. Conserver cette valeur privee.",
+      "env_variable": "DISCORD_BOT_TOKEN",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string",
+      "field_type": "text"
+    },
+    {
+      "name": "Discord Guild ID",
+      "description": "Identifiant du serveur sur lequel le bot est installe.",
+      "env_variable": "DISCORD_GUILD_ID",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string",
+      "field_type": "text"
+    },
+    {
+      "name": "Role Fondateur",
+      "description": "Identifiant Discord du role Fondateur.",
+      "env_variable": "ROLE_FOUNDER_ID",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "nullable|string",
+      "field_type": "text"
+    },
+    {
+      "name": "Role Co-fondateur",
+      "description": "Identifiant Discord du role Co-fondateur.",
+      "env_variable": "ROLE_COFOUNDER_ID",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "nullable|string",
+      "field_type": "text"
+    },
+    {
+      "name": "Role Staff",
+      "description": "Identifiant Discord du role Staff.",
+      "env_variable": "ROLE_STAFF_ID",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "nullable|string",
+      "field_type": "text"
+    },
+    {
+      "name": "Invitation Discord",
+      "description": "Lien d’invitation officiel facultatif.",
+      "env_variable": "DISCORD_INVITE_URL",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "nullable|string",
+      "field_type": "text"
+    },
+    {
+      "name": "Secret interne API et bot",
+      "description": "Secret partage d’au moins 32 caracteres.",
+      "env_variable": "INTERNAL_API_SECRET",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string|min:32",
+      "field_type": "text"
+    },
+    {
+      "name": "A2F Discord",
+      "description": "Code prive a chaque nouvelle connexion.",
+      "env_variable": "TWO_FA_ENABLED",
+      "default_value": "true",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|in:true",
+      "field_type": "text"
+    },
+    {
+      "name": "Proxy HTTPS de confiance",
+      "description": "Nombre de proxys de confiance entre l’utilisateur et l’API. Utiliser 1 uniquement avec le proxy de votre hebergeur.",
+      "env_variable": "API_TRUST_PROXY_HOPS",
+      "default_value": "0",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|integer|min:0|max:5",
+      "field_type": "text"
+    },
+    {
+      "name": "Environnement",
+      "description": "Environnement Node.js pour les services.",
+      "env_variable": "NODE_ENV",
+      "default_value": "production",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|in:production",
+      "field_type": "text"
+    }
+  ]
+}

@@ -14,23 +14,26 @@ const sleep = (ms: number, s: AbortSignal) => new Promise<void>((res, rej) => {
 });
 
 let flowCtx: { state: string; verifier: string } | null = null;
-export interface LoginHooks { onTwoFactor: (info: { resendInMs: number; canResend: boolean }) => void }
+export interface LoginHooks { onTwoFactor: (info: { resendInMs: number; canResend: boolean }) => void; onStatus?: (status: "connecting" | "authorizing") => void }
 
 export async function loginWithDiscord(signal: AbortSignal, hooks: LoginHooks) {
+  hooks.onStatus?.("connecting");
   const { verifier, challenge } = await createPkcePair();
   let start: { state: string; url: string; inviteUrl: string | null };
-  try { start = await api("/auth/discord/start", { method: "POST", body: JSON.stringify({ codeChallenge: challenge }), token: "" }); }
-  catch { throw new LoginError("network"); }
+  try { start = await api("/auth/discord/start", { method: "POST", body: JSON.stringify({ codeChallenge: challenge }), token: "", signal }); }
+  catch { throw new LoginError(signal.aborted ? "cancelled" : "network"); }
   flowCtx = { state: start.state, verifier };
 
   try {
     try {
+      if (signal.aborted) throw new LoginError("cancelled");
       if (inTauri) await openUrl(start.url);
       else window.open(start.url, "_blank");
     } catch {
-      throw new LoginError("browser");
+      throw new LoginError(signal.aborted ? "cancelled" : "browser");
     }
 
+    hooks.onStatus?.("authorizing");
     let notified = false;
     const deadline = Date.now() + 10 * 60_000;
     while (Date.now() < deadline) {

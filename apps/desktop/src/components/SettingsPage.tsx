@@ -41,13 +41,23 @@ export function SettingsPage() {
       <section className={card}>
         <h2 className="font-semibold">Mises à jour</h2>
         <p className="mt-2 text-sm text-muted">Version installée : {version}</p>
-        <button onClick={() => (up.state.s === "available" ? up.install(up.state.update) : up.checkNow())} disabled={up.state.s === "checking" || up.state.s === "downloading"} className="mt-3 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
-          {up.state.s === "available" ? `Installer la version ${up.state.update.version}` : "Rechercher des mises à jour"}
+        <button
+          onClick={() => up.state.s === "error" && up.state.restartRequired ? up.restart() : up.state.s === "available" || (up.state.s === "error" && up.state.retryInstall) ? up.install() : up.checkNow()}
+          disabled={["checking", "downloading", "installing", "restarting", "unsupported"].includes(up.state.s)}
+          className="mt-3 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+          {up.state.s === "error" && up.state.restartRequired ? "Redémarrer Avenzia" : up.state.s === "available" ? "Installer la version " + up.state.version : up.state.s === "error" && up.state.retryInstall ? "Réessayer l’installation" : "Rechercher des mises à jour"}
         </button>
         <p className="mt-2 text-sm text-muted" role="status">
-          {up.state.s === "checking" && "Recherche en cours…"}{up.state.s === "none" && "Vous êtes à jour."}
-          {up.state.s === "error" && `Échec : ${up.state.msg}`}{up.state.s === "downloading" && `Téléchargement ${up.state.pct}%`}
+          {up.state.s === "checking" && "Recherche en cours…"}
+          {up.state.s === "none" && "Vous êtes à jour."}
+          {up.state.s === "unsupported" && "Les mises à jour s’installent depuis l’application desktop."}
+          {up.state.s === "error" && up.state.msg}
+          {up.state.s === "downloading" && (up.state.pct === null ? "Téléchargement en cours…" : "Téléchargement " + up.state.pct + " %")}
+          {up.state.s === "installing" && "Installation en cours…"}
+          {up.state.s === "restarting" && "Redémarrage en cours…"}
         </p>
+        {up.state.s === "available" && up.state.notes && <pre className="mt-3 whitespace-pre-wrap font-sans text-sm text-muted">{up.state.notes}</pre>}
+        {up.state.s === "error" && up.state.retryInstall && <button onClick={() => up.checkNow()} className="mt-2 text-sm text-accent">Rechercher une autre version</button>}
       </section>
     </div>
   );

@@ -1,5 +1,7 @@
-name: Release (manuel)
+name: Release signée
 on:
+  push:
+    tags: ["v*.*.*"]
   workflow_dispatch:
 permissions:
   contents: write
@@ -13,6 +15,7 @@ jobs:
     env:
       DATABASE_URL: postgresql://test:test@localhost:5432/test
       VITE_API_URL: ${{ vars.VITE_API_URL }}
+      RELEASE_TARGET: ${{ vars.RELEASE_TARGET || 'public' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -20,6 +23,10 @@ jobs:
           node-version: 22
           cache: npm
       - uses: dtolnay/rust-toolchain@stable
+      - run: npm run version:check
+      - run: node scripts/release-preflight.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: npm ci --ignore-scripts
       - run: npm run db:generate
       - run: npm run typecheck
@@ -27,7 +34,12 @@ jobs:
       - run: npm audit --audit-level=high
       - run: npx tauri icon app-icon.png --output src-tauri/icons
         working-directory: apps/desktop
-      - run: npm run desktop:prepare -- --public
+      - name: Préparer l’adresse API
+        shell: pwsh
+        run: |
+          if ($env:RELEASE_TARGET -eq "local") { npm run desktop:prepare }
+          else { npm run desktop:prepare -- --public }
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Vérifier les secrets de signature
         shell: pwsh
         env:
@@ -37,6 +49,7 @@ jobs:
           if (!$env:TAURI_SIGNING_PRIVATE_KEY) { throw "Secret TAURI_SIGNING_PRIVATE_KEY manquant" }
           if (!$env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD) { throw "Secret TAURI_SIGNING_PRIVATE_KEY_PASSWORD manquant" }
       - uses: tauri-apps/tauri-action@v1
+        id: tauri
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
@@ -49,3 +62,8 @@ jobs:
           releaseDraft: true
           uploadUpdaterJson: true
           updaterJsonPreferNsis: true
+
+      - name: Vérifier et publier la mise à jour
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/publish-release.mjs "${{ steps.tauri.outputs.releaseId }}"

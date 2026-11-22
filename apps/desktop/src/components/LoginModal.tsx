@@ -22,6 +22,7 @@ const DiscordGlyph = () => (
 
 export function LoginModal() {
   const [busy, setBusy] = useState(false);
+  const [stage, setStage] = useState<"connecting" | "authorizing">("connecting");
   const [err, setErr] = useState<LoginError | null>(null);
   const abort = useRef<AbortController | null>(null);
   const [twoFa, setTwoFa] = useState<{ resendInMs: number; canResend: boolean } | null>(null);
@@ -29,7 +30,7 @@ export function LoginModal() {
   const start = async () => {
     setErr(null); setTwoFa(null); setBusy(true);
     abort.current = new AbortController();
-    try { await loginWithDiscord(abort.current.signal, { onTwoFactor: setTwoFa }); }
+    try { await loginWithDiscord(abort.current.signal, { onTwoFactor: setTwoFa, onStatus: setStage }); }
     catch (e) { if (!(e instanceof LoginError && e.reason === "cancelled")) setErr(e instanceof LoginError ? e : new LoginError("failed")); }
     finally { setBusy(false); setTwoFa(null); }
   };
@@ -53,7 +54,7 @@ export function LoginModal() {
           {err && MESSAGES[err.reason] && <p role="alert" className="mt-4 rounded-xl bg-danger/10 px-3 py-2 text-sm text-danger">{MESSAGES[err.reason]}</p>}
           <button onClick={start} disabled={busy} className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-accent px-5 py-3 font-semibold text-white transition hover:brightness-110 disabled:opacity-70">
             {busy ? <Loader2 className="animate-spin" size={20} /> : <DiscordGlyph />}
-            {busy ? "En attente de Discord…" : "Se connecter avec Discord"}
+            {busy ? (stage === "connecting" ? "Connexion au serveur…" : "En attente de Discord…") : "Se connecter avec Discord"}
           </button>
           {busy && <button onClick={() => abort.current?.abort()} className="mt-3 text-sm text-muted hover:text-txt">Annuler</button>}
           <p className="mt-4 text-xs italic text-muted">Une connexion Discord est nécessaire pour accéder à Avenzia.</p>

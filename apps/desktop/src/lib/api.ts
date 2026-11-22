@@ -9,6 +9,7 @@ export async function api<T>(path: string, init: RequestInit & { token?: string 
   try {
     res = await fetch(`${API_URL}${path}`, {
       ...init,
+      signal: init.signal ?? AbortSignal.timeout(120_000),
       headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}), ...init.headers },
     });
   } catch { throw new ApiError(0, "network"); }

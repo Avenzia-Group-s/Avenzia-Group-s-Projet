@@ -17,11 +17,15 @@
     "db:migrate": "npm -w @avenzia/database run migrate",
     "db:deploy": "npm -w @avenzia/database run deploy",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "node --test scripts/env.test.mjs && npm run test --workspaces --if-present",
+    "test": "node --test scripts/env.test.mjs scripts/updates.test.mjs && npm run test --workspaces --if-present",
     "build": "node scripts/build.mjs",
-    "release": "node scripts/build.mjs",
+    "release": "node scripts/release.mjs",
     "dev:web": "npm -w @avenzia/desktop run dev",
     "doctor": "node scripts/doctor.mjs",
-    "desktop:prepare": "node scripts/prepare-desktop.mjs"
+    "desktop:prepare": "node scripts/prepare-desktop.mjs",
+    "start:hosted": "node scripts/start-hosted.mjs",
+    "version:check": "node scripts/version.mjs --check",
+    "version:bump": "node scripts/version.mjs",
+    "test:smoke": "node --import tsx scripts/smoke-api.mjs"
   }
 }

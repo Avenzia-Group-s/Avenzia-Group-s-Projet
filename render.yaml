@@ -1,0 +1,40 @@
+services:
+  - type: web
+    name: avenzia-services
+    runtime: node
+    plan: free
+    branch: codex/project-setup
+    buildCommand: npm ci --include=dev --ignore-scripts && npm run db:generate
+    startCommand: npm run start:hosted
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: API_TRUST_PROXY_HOPS
+        value: "1"
+      - key: API_HOST
+        value: 0.0.0.0
+      - key: DATABASE_URL
+        sync: false
+      - key: DISCORD_CLIENT_ID
+        sync: false
+      - key: DISCORD_CLIENT_SECRET
+        sync: false
+      - key: DISCORD_BOT_TOKEN
+        sync: false
+      - key: DISCORD_GUILD_ID
+        sync: false
+      - key: ROLE_FOUNDER_ID
+        sync: false
+      - key: ROLE_COFOUNDER_ID
+        sync: false
+      - key: ROLE_STAFF_ID
+        sync: false
+      - key: DISCORD_INVITE_URL
+        sync: false
+      - key: TWO_FA_ENABLED
+        value: "true"
+      - key: INTERNAL_API_SECRET
+        generateValue: true

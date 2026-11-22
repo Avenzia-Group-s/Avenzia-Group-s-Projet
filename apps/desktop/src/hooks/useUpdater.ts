@@ -1,36 +1,30 @@
-import { useCallback, useState } from "react";
-import { check, type Update } from "@tauri-apps/plugin-updater";
-import { relaunch } from "@tauri-apps/plugin-process";
-import { inTauri } from "../lib/config";
-
-export type UpdateState =
-  | { s: "idle" } | { s: "checking" } | { s: "none" }
-  | { s: "available"; update: Update } | { s: "downloading"; pct: number } | { s: "error"; msg: string };
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createUpdater, type UpdateState } from "../lib/updater";
 
 export function useUpdater() {
   const [state, setState] = useState<UpdateState>({ s: "idle" });
-
-  const checkNow = useCallback(async () => {
-    if (!inTauri) return setState({ s: "none" });
-    setState({ s: "checking" });
-    try {
-      // La signature minisign est vérifiée par le plugin avec la clé publique de tauri.conf.json.
-      const update = await check();
-      setState(update ? { s: "available", update } : { s: "none" });
-    } catch (e) { setState({ s: "error", msg: e instanceof Error ? e.message : String(e) }); }
+  const controller = useRef<ReturnType<typeof createUpdater> | null>(null);
+  useEffect(() => {
+    const instance = createUpdater(setState);
+    controller.current = instance;
+    let lastCheck = 0;
+    const automaticCheck = () => {
+      if (Date.now() - lastCheck < 15 * 60_000) return;
+      lastCheck = Date.now();
+      void instance.checkNow();
+    };
+    automaticCheck();
+    const timer = window.setInterval(automaticCheck, 4 * 60 * 60_000);
+    window.addEventListener("focus", automaticCheck);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", automaticCheck);
+      instance.dispose();
+      if (controller.current === instance) controller.current = null;
+    };
   }, []);
-
-  const install = useCallback(async (update: Update) => {
-    let total = 0, got = 0;
-    setState({ s: "downloading", pct: 0 });
-    try {
-      await update.downloadAndInstall((ev) => {
-        if (ev.event === "Started") total = ev.data.contentLength ?? 0;
-        if (ev.event === "Progress") { got += ev.data.chunkLength; setState({ s: "downloading", pct: total ? Math.round((got / total) * 100) : 0 }); }
-      });
-      await relaunch();
-    } catch (e) { setState({ s: "error", msg: e instanceof Error ? e.message : String(e) }); }
-  }, []);
-
-  return { state, checkNow, install };
+  const checkNow = useCallback(() => controller.current?.checkNow(), []);
+  const install = useCallback(() => controller.current?.install(), []);
+  const restart = useCallback(() => controller.current?.restart(), []);
+  return { state, checkNow, install, restart };
 }

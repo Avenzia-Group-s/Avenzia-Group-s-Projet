@@ -3,8 +3,10 @@ import { z } from "zod";
 const optId = z.string().regex(/^\d{15,25}$/).optional().or(z.literal("").transform(() => undefined));
 const schema = z.object({
   DATABASE_URL: z.string().min(1),
-  API_PORT: z.coerce.number().int().min(1).max(65535).default(3000),
-  API_PUBLIC_URL: z.string().url().transform(value => value.replace(/\/$/, "")),
+  API_TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(0),
+  API_HOST: z.string().min(1).default("127.0.0.1"),
+  API_PORT: z.coerce.number().int().min(1).max(65535).default(Number(process.env.PORT || 3000)),
+  API_PUBLIC_URL: z.string().url().default(process.env.RENDER_EXTERNAL_URL || "http://localhost:3000").transform(value => value.replace(/\/$/, "")),
   DISCORD_CLIENT_ID: z.string().min(1),
   DISCORD_CLIENT_SECRET: z.string().min(1),
   DISCORD_BOT_TOKEN: z.string().optional(),

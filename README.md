@@ -46,19 +46,25 @@ L’API et le bot chargent `.env`, puis `.env.local`. Les valeurs de `.env.local
 
 Les secrets et leurs sauvegardes sont exclus de Git. Le dossier `.keys` doit être sauvegardé dans un emplacement privé.
 
+## Mises à jour et hébergement
+
+Consultez [UPDATES.md](docs/UPDATES.md) pour les mises à jour en place et [PTERODACTYL.md](docs/PTERODACTYL.md) pour l’egg Node.js 22. L’alternative Render Free et Neon Free est décrite dans [DEPLOY.md](docs/DEPLOY.md).
+
+Après configuration, `scripts\\release.bat patch` prépare la version et déclenche la compilation signée sur GitHub. La release est publiée après vérification des artefacts.
+
 ## Compiler sur GitHub
 
 ### Installateur de test sur votre PC
 
 Un envoi sur une branche `codex/**` lance automatiquement **Build Windows** et la CI. Après intégration du workflow sur la branche principale, vous pouvez aussi ouvrir **Actions → Build Windows → Run workflow**. Conservez `http://localhost:3000` comme adresse API pour tester avec les services de votre PC. Téléchargez ensuite **Avenzia-Windows-test** dans les artefacts de l’exécution.
 
-Ce workflow génère les icônes, vérifie le code et compile l’installateur. Il produit un installateur de test dont les mises à jour signées sont désactivées lors du build.
+Ce workflow génère les icônes, vérifie le code et compile l’installateur. Il produit un installateur de test contenant le client de mise à jour. Les signatures destinées à la distribution des mises à jour sont produites par le workflow Release signée.
 
 ### Release signée pour le staff
 
-Dans **Settings → Secrets and variables → Actions**, ajoutez les secrets `TAURI_SIGNING_PRIVATE_KEY` (contenu de votre clé locale) et `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. Ajoutez la variable `VITE_API_URL` contenant l’adresse HTTPS publique de votre API.
+La configuration et les commandes sont détaillées dans [UPDATES.md](docs/UPDATES.md). Renseignez les secrets de signature via `scripts\configure-updates.bat`, puis publiez avec `scripts\release.bat patch`.
 
-Lancez **Actions → Release (manuel)**. Le workflow crée une release en brouillon avec l’installateur signé pour l’updater et `latest.json`. Publiez ce brouillon après validation. Augmentez la version dans les trois fichiers `apps/desktop/package.json`, `src-tauri/Cargo.toml` et `src-tauri/tauri.conf.json` pour une nouvelle release.
+Le workflow **Release signée** contrôle les tests, les types, l’audit, la signature et la version, puis publie les fichiers pour l’updater.
 
 GitHub compile l’application. PostgreSQL, l’API et le bot fonctionnent sur votre PC ou sur un hébergement. Les services Discord restent configurés sur cette machine.
 

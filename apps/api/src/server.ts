@@ -15,7 +15,14 @@ declare module "fastify" {
 }
 
 const app = Fastify({
-  logger: { level: "info", redact: ["req.headers.authorization", "req.headers['x-internal-secret']"] },
+  trustProxy: (_address, hop) => hop < env.API_TRUST_PROXY_HOPS,
+  logger: {
+    level: "info",
+    redact: ["req.headers.authorization", "req.headers['x-internal-secret']"],
+    serializers: {
+      req(request) { return { method: request.method, url: request.url?.split("?")[0] }; },
+    },
+  },
   bodyLimit: 1_000_000,
 });
 
@@ -46,4 +53,11 @@ await app.register(internalRoutes);
 
 
 await prisma.$connect();
-await app.listen({ port: env.API_PORT, host: "127.0.0.1" });
+await app.listen({ port: env.API_PORT, host: env.API_HOST });
+
+async function shutdown() {
+  await app.close();
+  await prisma.$disconnect();
+}
+process.once("SIGTERM", () => { void shutdown(); });
+process.once("SIGINT", () => { void shutdown(); });

@@ -12,6 +12,8 @@ if (!token || !clientId || !guildId || (process.env.INTERNAL_API_SECRET?.length 
 
 // GuildMembers est un intent PRIVILÉGIÉ : à activer dans le Developer Portal.
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers] });
+process.once("SIGTERM", () => client.destroy());
+process.once("SIGINT", () => client.destroy());
 
 const command = new SlashCommandBuilder().setName("avenzia").setDescription("Commandes Avenzia")
   .addSubcommand((s) => s.setName("aide").setDescription("Liste des commandes"))

@@ -1,35 +1,64 @@
-# Où héberger l'API et le bot (sans serveur dédié)
+# Déploiement des services Avenzia
 
-L'API n'est pas un service à « obtenir » : c'est `apps/api` de ce dépôt. Elle doit tourner **quelque part joignable en HTTPS**, avec PostgreSQL et le bot (`apps/discord-bot`, qui doit rester connecté 24h/24).
+L’application Windows échange avec l’API. L’API utilise PostgreSQL et le bot synchronise les rôles avec cette API. Une adresse HTTPS publique permet aux utilisateurs d’accéder au même service depuis leurs PC.
 
-## Option A — Votre PC + Cloudflare Tunnel (gratuit, pour démarrer)
-Prérequis : un compte Cloudflare gratuit et un **nom de domaine** dont le DNS est sur Cloudflare (le domaine lui-même est payant chez un registrar). Le PC doit rester allumé avec API + bot + PostgreSQL (`scripts\start-dev.bat`).
+## Pterodactyl
 
-1. Installer `cloudflared`, puis : `cloudflared tunnel login`
-2. `cloudflared tunnel create avenzia`
-3. `cloudflared tunnel route dns avenzia api.votredomaine.fr`
-4. `config.yml` :
-   ```yaml
-   tunnel: avenzia
-   credentials-file: C:\Users\VOUS\.cloudflared\<ID>.json
-   ingress:
-     - hostname: api.votredomaine.fr
-       service: http://localhost:3000
-     - service: http_status:404
-   ```
-5. `cloudflared tunnel run avenzia` (ou `cloudflared service install` pour un démarrage automatique)
+L’egg Avenzia Node.js 22 et la procédure sont fournis dans [PTERODACTYL.md](PTERODACTYL.md). Le programme choisit le port alloué par le panel et démarre l’API et le bot ensemble.
 
-## Option B — Hébergement cloud (24h/24)
-Un petit VPS (ex. OVH, Hetzner) avec Docker, ou une plateforme (Railway, Render, Fly.io) + PostgreSQL géré (Neon, Supabase…). **Vérifiez les tarifs et limites actuels** avant de choisir : le plan gratuit met souvent les services en veille, ce qui coupe le bot Discord.
+## Render Free et Neon Free
 
-## Test uniquement : tunnel rapide
-`cloudflared tunnel --url http://localhost:3000` donne une URL `*.trycloudflare.com` aléatoire, sans compte, mais **différente à chaque lancement** et sans garantie de disponibilité : inutilisable en production.
+Cette configuration gratuite a été préparée pour un démarrage avec mise en veille acceptée. Render arrête le service gratuit après une période sans trafic entrant. Le bot est hors ligne pendant cette veille et le prochain accès HTTP réveille le service. L’application laisse davantage de temps à cette première requête.
 
-## Configuration à faire une fois l'URL connue (ex. https://api.votredomaine.fr)
-1. `.env.local` : `API_PUBLIC_URL=https://api.votredomaine.fr` et `VITE_API_URL=https://api.votredomaine.fr`
-2. Discord Developer Portal > OAuth2 > Redirects : ajouter `https://api.votredomaine.fr/auth/discord/callback`
-3. `scripts\build.bat` : vérifie que `VITE_API_URL` est en HTTPS et autorise cette adresse dans la CSP de l'app.
-4. Le bot doit tourner au même endroit que l'API (`API_URL=http://localhost:3000`).
+La base PostgreSQL est hébergée chez Neon Free. Consultez les quotas actuels du plan avant le déploiement.
 
-## Sauvegardes
-Planifiez `pg_dump` régulier de la base ; les sessions et l'audit y sont stockés.
+Sources des offres
+
+- https://render.com/docs/free
+- https://render.com/docs/your-first-deploy
+- https://neon.com/pricing
+
+### Base Neon
+
+1. Créez un compte et un projet gratuit sur Neon.
+2. Dans **Connect**, récupérez l’URL PostgreSQL directe, avec TLS.
+3. Conservez cette connexion pour la variable privée `DATABASE_URL` de Render.
+
+### Service Render
+
+Le fichier `render.yaml` décrit le service. Vous pouvez aussi le créer manuellement dans **New → Web Service** avec les réglages suivants.
+
+| Réglage | Valeur |
+| --- | --- |
+| Dépôt | Avenzia-Group-s/Avenzia-Group-s-Projet |
+| Branche | codex/project-setup |
+| Runtime | Node |
+| Plan | Free |
+| Build | npm ci --include=dev --ignore-scripts && npm run db:generate |
+| Start | npm run start:hosted |
+| Health check | /health |
+
+Ajoutez les variables privées `DATABASE_URL`, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID`, les identifiants `ROLE_*_ID`, `DISCORD_INVITE_URL` et un `INTERNAL_API_SECRET` d’au moins 32 caractères. Activez `TWO_FA_ENABLED=true`, `API_HOST=0.0.0.0`, `API_TRUST_PROXY_HOPS=1` et utilisez Node.js 22.
+
+Le programme utilise le `PORT` et le domaine public injectés par Render. Il applique les migrations PostgreSQL avant de démarrer les deux services.
+
+### Activer l’accès depuis les applications
+
+1. Vérifiez `https://VOTRE-SERVICE.onrender.com/health`.
+2. Ajoutez `https://VOTRE-SERVICE.onrender.com/auth/discord/callback` dans les Redirects du portail Discord.
+3. Configurez cette adresse dans GitHub avec `scripts\configure-updates.bat --api-url https://VOTRE-SERVICE.onrender.com`.
+4. Publiez une version avec `scripts\release.bat patch`.
+
+Les secrets se renseignent directement dans le tableau de bord privé de l’hébergeur. L’application Windows reçoit uniquement l’adresse publique de l’API.
+
+## Hébergement sur votre PC
+
+Votre PC peut également conserver les trois services. Une adresse HTTPS stable doit alors transmettre les requêtes publiques vers l’API locale, et le PC doit rester allumé.
+
+Avec un domaine géré sur Cloudflare, un tunnel peut transmettre les requêtes vers `http://localhost:3000`. Configurez `API_PUBLIC_URL` et l’adresse intégrée aux releases avec ce domaine, puis enregistrez le callback Discord correspondant.
+
+## Données et sauvegardes
+
+PostgreSQL conserve les comptes, projets et sessions. Avant une bascule depuis la base locale, sauvegardez puis restaurez les données sur la base cible. Planifiez ensuite des sauvegardes régulières.
+
+L’installation ou la mise à jour de l’application Windows conserve les données hébergées dans PostgreSQL.

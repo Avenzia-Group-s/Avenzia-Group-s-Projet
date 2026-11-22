@@ -6,14 +6,15 @@ import { LoginModal } from "./components/LoginModal";
 import { Shell } from "./components/Shell";
 import { Logo } from "./components/Logo";
 import { UpdaterProvider } from "./hooks/UpdaterProvider";
+import { UpdateBanner } from "./components/UpdateBanner";
 
-export default function App() {
+function AppContent() {
   useThemeEffect();
   const user = useApp((s) => s.user);
   const [booting, setBooting] = useState(true);
   useEffect(() => { restoreSession().finally(() => setBooting(false)); }, []);
 
-  if (user) return <UpdaterProvider><Shell /></UpdaterProvider>;
+  if (user) return <Shell />;
   return (
     <div className="h-full grid place-items-center bg-bg relative">
       <div className="absolute inset-0 opacity-40" style={{ background: "radial-gradient(60% 50% at 50% 30%, rgb(var(--accent) / .25), transparent)" }} />
@@ -23,5 +24,16 @@ export default function App() {
       </div>
       {booting ? <div className="absolute bottom-16 h-1 w-40 overflow-hidden rounded bg-surface"><div className="h-full w-1/2 animate-pulse rounded bg-accent" /></div> : <LoginModal />}
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <UpdaterProvider>
+      <div className="flex h-full flex-col">
+        <UpdateBanner />
+        <div className="min-h-0 flex-1"><AppContent /></div>
+      </div>
+    </UpdaterProvider>
   );
 }
