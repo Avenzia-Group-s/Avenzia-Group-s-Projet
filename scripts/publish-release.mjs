@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { verifyUpdate } from "./verify-update.mjs";
+import { resolveInstaller } from "./release-manifest.mjs";
 
 const repo = process.env.GITHUB_REPOSITORY;
 const token = process.env.GITHUB_TOKEN;
@@ -33,10 +34,8 @@ const targets = Object.entries(manifest.platforms || {}).filter(([name]) => name
 if (!targets.length) throw new Error("Plateforme Windows manquante dans le manifeste.");
 const verified = new Map();
 for (const [, target] of targets) {
-  const installer = release.assets.find(entry => entry.browser_download_url === target.url && entry.name.endsWith("-setup.exe"));
-  if (!installer || !target.url.startsWith("https://github.com/" + repo + "/releases/download/" + release.tag_name + "/")) {
-    throw new Error("Adresse de téléchargement non conforme à cette release.");
-  }
+  const { installer, publicUrl } = resolveInstaller(release, target, repo);
+  target.url = publicUrl;
   const signature = (await contents(asset(installer.name + ".sig"))).toString("utf8").trim();
   if (signature !== target.signature) throw new Error("Signature du manifeste différente du fichier .sig.");
   if (!verified.has(installer.name)) {
@@ -45,6 +44,12 @@ for (const [, target] of targets) {
     verified.set(installer.name, createHash("sha256").update(binary).digest("hex"));
   }
 }
+const manifestAsset = asset("latest.json");
+await request(manifestAsset.url, { method: "DELETE" });
+await request(release.upload_url.replace(/\{.*$/, "") + "?name=latest.json", {
+  method: "POST", headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(manifest, null, 2) + "\n",
+});
 const sums = [...verified].map(([name, hash]) => hash + "  " + name).join("\n") + "\n";
 const previousSums = release.assets.find(entry => entry.name === "SHA256SUMS.txt");
 const sameSums = previousSums && (await contents(previousSums)).toString("utf8") === sums;
