@@ -1,0 +1,11 @@
+
+{
+  "app": {
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.discordapp.com; connect-src 'self' ipc: http://ipc.localhost http://localhost:3000 https://api.avenzia.example https://integral-proceed-priced-acknowledge.trycloudflare.com"
+    }
+  },
+  "bundle": {
+    "createUpdaterArtifacts": false
+  }
+}

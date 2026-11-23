@@ -16,7 +16,7 @@ jobs:
     timeout-minutes: 45
     env:
       DATABASE_URL: postgresql://test:test@localhost:5432/test
-      VITE_API_URL: ${{ inputs.api_url || 'http://localhost:3000' }}
+      VITE_API_URL: ${{ inputs.api_url || vars.VITE_API_URL }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
