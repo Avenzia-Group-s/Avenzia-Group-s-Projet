@@ -1,6 +1,6 @@
 [package]
 name = "avenzia"
-version = "0.1.3"
+version = "0.1.4"
 description = "Avenzia | Groups"
 edition = "2021"
 rust-version = "1.77"
