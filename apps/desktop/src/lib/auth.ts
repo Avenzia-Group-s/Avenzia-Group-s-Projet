@@ -7,7 +7,15 @@ import { useApp } from "./store";
 import type { PublicProject, PublicUser } from "@avenzia/shared";
 
 export type LoginFailure = "denied" | "dm_closed" | "too_many_attempts" | "not_member" | "failed" | "unavailable" | "timeout" | "network" | "browser" | "cancelled";
-export class LoginError extends Error { constructor(public reason: LoginFailure, public inviteUrl?: string | null) { super(reason); } }
+export class LoginError extends Error {
+  constructor(
+    public reason: LoginFailure,
+    public inviteUrl?: string | null,
+    public diagnostic?: string
+  ) {
+    super(reason);
+  }
+}
 
 const sleep = (ms: number, s: AbortSignal) => new Promise<void>((res, rej) => {
   const t = setTimeout(res, ms); s.addEventListener("abort", () => { clearTimeout(t); rej(new LoginError("cancelled")); }, { once: true });
@@ -21,8 +29,15 @@ export async function loginWithDiscord(signal: AbortSignal, hooks: LoginHooks) {
   const { verifier, challenge } = await createPkcePair();
   let start: { state: string; url: string; inviteUrl: string | null };
   try { start = await api("/auth/discord/start", { method: "POST", body: JSON.stringify({ codeChallenge: challenge }), token: "", signal }); }
-  catch { throw new LoginError(signal.aborted ? "cancelled" : "network"); }
-  flowCtx = { state: start.state, verifier };
+catch (e) {
+  if (signal.aborted) throw new LoginError("cancelled");
+
+  const diagnostic = e instanceof ApiError
+    ? `HTTP ${e.status} — ${e.code}`
+    : "Erreur inattendue";
+
+  throw new LoginError("network", null, diagnostic);
+}  flowCtx = { state: start.state, verifier };
 
   try {
     try {

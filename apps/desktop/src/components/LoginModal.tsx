@@ -51,8 +51,16 @@ export function LoginModal() {
         <>
           <h2 id="login-title" className="text-xl font-bold">Bienvenue sur Avenzia !</h2>
           <p className="mt-2 text-sm text-muted">Veuillez vous connecter avec l'application Discord pour accéder à votre espace de travail.</p>
-          {err && MESSAGES[err.reason] && <p role="alert" className="mt-4 rounded-xl bg-danger/10 px-3 py-2 text-sm text-danger">{MESSAGES[err.reason]}</p>}
-          <button onClick={start} disabled={busy} className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-accent px-5 py-3 font-semibold text-white transition hover:brightness-110 disabled:opacity-70">
+{err && MESSAGES[err.reason] && (
+  <div role="alert" className="mt-4 rounded-xl bg-danger/10 px-3 py-2 text-sm text-danger">
+    <p>{MESSAGES[err.reason]}</p>
+    {err.diagnostic && (
+      <p className="mt-2 break-words font-mono text-xs">
+        Diagnostic : {err.diagnostic}
+      </p>
+    )}
+  </div>
+)}          <button onClick={start} disabled={busy} className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-accent px-5 py-3 font-semibold text-white transition hover:brightness-110 disabled:opacity-70">
             {busy ? <Loader2 className="animate-spin" size={20} /> : <DiscordGlyph />}
             {busy ? (stage === "connecting" ? "Connexion au serveur…" : "En attente de Discord…") : "Se connecter avec Discord"}
           </button>
